@@ -9,6 +9,7 @@ namespace ConsoleMvvm
     {
         static void Main(string[] args)
         {
+            ///Возможно реализовать внедрение зависимостей с помощью Autofac
             var view = new View(new ViewModel(new Model()));
             view.Show();
         }
