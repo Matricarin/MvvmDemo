@@ -43,12 +43,31 @@ namespace ConsoleMvvm
         private void TimerOnElapsed(object? sender, ElapsedEventArgs e)
             => TimeChanged?.Invoke(e.SignalTime);
     }
-
+    /// <summary>
+    /// Класс для связывания Model и View.
+    /// </summary>
     internal class ViewModel
     {
+        /// <summary>
+        /// Свойство Time соотвествует свойству из View.
+        /// </summary>
+        public string Time { get; set; }
+        /// <summary>
+        /// В конструкторе подписываемся на событие из Model 
+        /// для отображения изменений в модели.
+        /// </summary>
+        /// <param name="model">Передаем в конструктор экземпляр Model.</param>
         public ViewModel(Model model)
         {
-            
+            model.TimeChanged += ModelOnTimeChanged;
+        }
+        /// <summary>
+        /// Метод для записи текущего времени в свойство Time.
+        /// </summary>
+        /// <param name="obj">Время на таймере.</param>
+        private void ModelOnTimeChanged(DateTime obj)
+        {
+            Time = obj.ToShortTimeString();
         }
     }
 
