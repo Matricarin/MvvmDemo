@@ -1,4 +1,6 @@
-﻿using System.Timers;
+﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using System.Timers;
 using ST = System.Timers;
 
 namespace ConsoleMvvm
@@ -46,12 +48,21 @@ namespace ConsoleMvvm
     /// <summary>
     /// Класс для связывания Model и View.
     /// </summary>
-    internal class ViewModel
+    internal class ViewModel : INotifyPropertyChanged
     {
+        private string _time;
         /// <summary>
         /// Свойство Time соотвествует свойству из View.
         /// </summary>
-        public string Time { get; set; }
+        public string Time 
+        { 
+            get => _time; 
+            set
+            {
+                _time = value;
+                OnPropertyChanged();
+            }
+        }
         /// <summary>
         /// В конструкторе подписываемся на событие из Model 
         /// для отображения изменений в модели.
@@ -63,12 +74,26 @@ namespace ConsoleMvvm
             model.TimeChanged += ModelOnTimeChanged;
         }
         /// <summary>
+        /// Событие для оповещения об изменения для View
+        /// </summary>
+        public event PropertyChangedEventHandler? PropertyChanged;
+        /// <summary>
+        /// Метод для изменения свойства
+        /// </summary>
+        /// <param name="propertyName">Имя изменяемого свойства</param>
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+
+        /// <summary>
         /// Метод для записи текущего времени в свойство Time.
         /// </summary>
         /// <param name="obj">Время на таймере.</param>
         private void ModelOnTimeChanged(DateTime obj)
         {
-            Time = obj.ToShortTimeString();
+            Time = obj.ToLongTimeString();
         }
     }
     /// <summary>
@@ -125,12 +150,32 @@ namespace ConsoleMvvm
             }
         }
         /// <summary>
-        /// Метод устанавливающий связт между свойствами View и свойствами ViewModel/
+        /// Метод устанавливающий связь между свойствами View и свойствами ViewModel/
         /// </summary>
         /// <param name="dependencyPropertyName">Наименование свойства из View.</param>
         /// <param name="binding">Наименование  свойства из ViewModel, 
         /// полученное с помощью Binding.</param>
         private void SetBinding(string dependencyPropertyName, Binding binding)
+        {
+            GetProperties(dependencyPropertyName, binding);
+            if(DataContext is INotifyPropertyChanged notify)
+            {
+                notify.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName == binding.DataContextPropertyName)
+                    {
+                        GetProperties(dependencyPropertyName, binding);
+                    }
+                };
+            }
+        }
+        /// <summary>
+        /// Назначение исходного и целевого свойств.
+        /// </summary>
+        /// <param name="dependencyPropertyName">Наименование свойства из View.</param>
+        /// <param name="binding">Наименование  свойства из ViewModel, 
+        /// полученное с помощью Binding.</param>
+        private void GetProperties(string dependencyPropertyName, Binding binding)
         {
             ///Получаем PropertyInfo из ViewModel.
             var sourceProperty = DataContext.GetType().GetProperty(binding.DataContextPropertyName);
@@ -139,7 +184,6 @@ namespace ConsoleMvvm
             ///Назначаем в targetValue значение из свойства наименование, 
             ///которого находится в sourceProperty
             targetProperty.SetValue(this, sourceProperty.GetValue(DataContext));
-
         }
     }
     /// <summary>
